@@ -16,5 +16,5 @@ router.get("/stuff2", function(req, res) {
 });
 
 app.use("/", router);
-console.log("backend server listening at port 3001");
+console.log("backend server listening at port ", port);
 app.listen(port);
