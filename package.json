@@ -19,6 +19,8 @@
   "homepage": "https://github.com/steelech/pics-api#readme",
   "devDependencies": {
     "express": "^4.15.2",
+    "gulp": "^3.9.1",
+    "gulp-nodemon": "^2.2.1",
     "path": "^0.12.7"
   }
 }
