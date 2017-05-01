@@ -1,6 +1,7 @@
 var express = require("express");
 var app = express();
 var path = require("path");
+var port = process.argv[2] || 8888
 
 var router = express.Router();
 
@@ -16,4 +17,4 @@ router.get("/stuff2", function(req, res) {
 
 app.use("/", router);
 console.log("backend server listening at port 3001");
-app.listen(3001);
+app.listen(port);

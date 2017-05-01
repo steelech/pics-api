@@ -1,1 +1,1 @@
-web: rm -rf node_modules && npm install && npm start 
+web: rm -rf node_modules && npm install && node server.js $PORT 
