@@ -1,0 +1,24 @@
+{
+  "name": "pics-api",
+  "version": "1.0.0",
+  "description": "API for pics client side web app, using Node.js",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/steelech/pics-api.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/steelech/pics-api/issues"
+  },
+  "homepage": "https://github.com/steelech/pics-api#readme",
+  "devDependencies": {
+    "express": "^4.15.2",
+    "path": "^0.12.7"
+  }
+}
