@@ -3,6 +3,13 @@ var app = express();
 var path = require("path");
 var port = process.argv[2] || 8888
 
+var MongoClient = require('mongodb').MongoClient;
+var url = 'mongodb://localhost:27017/pics-api';
+MongoClient.connect(url, function(err, db) {
+	  console.log("Connected correctly to server.");
+	  db.close();
+});
+
 var router = express.Router();
 
 router.get("/", function(req, res) {
