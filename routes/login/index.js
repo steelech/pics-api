@@ -1,11 +1,13 @@
 const login = require('express').Router();
 var MongoClient = require('mongodb').MongoClient;
 
-var findUser = (db, username, callback) => {
+var findUser = (db, username, password, callback) => {
 	var users = db.collection('users');
-	console.log("collection: ", users);
-	users.find().toArray((err, items) => {
-		console.log("items: ", items);
+	users.find({
+		"username": username,
+		"password": password
+	}).toArray((err, items) => {
+		callback(items);
 	})
 }
 
@@ -14,19 +16,23 @@ validateCreds = (username, password) => {
 	// hash password provided
 	// if the user is found, compare hashed password to value stored in database
 	// maybe start off by just comparing the username and password directly
-	console.log("username: ", username);
-	console.log("password: ", password);
-	var url = 'mongodb://localhost:27017/pics-api';
-	MongoClient.connect(url, function(err, db) {
-		if(err) {
-			console.log("error: ", err);
-		} else {
-			console.log("Connected correctly to server.");
-			findUser(db, username, (users) => {
-				console.log("users: ", users);
-				return (username == "charlie" && password == "password");
-			})
-		}
+	return new Promise((fullfill, reject) => {
+		var url = 'mongodb://localhost:27017/pics-api';
+		MongoClient.connect(url, function(err, db) {
+			if(err) {
+				console.log("error: ", err);
+				reject();
+			} else {
+				console.log("Connected correctly to server.");
+				findUser(db, username, password, (users) => {
+					if(users.length > 0) {
+						fullfill("token");
+					} else {
+						fullfill(null);
+					}
+				});
+			}
+		});
 	});
 }
 
@@ -44,11 +50,13 @@ login.post('/', (req, res) => {
 		res.status(404).json({error: "Invalid format for request"});
         } else {
 		var { username, password } = req.body;
-		if(validateCreds(username, password)) {
-			res.status(200).json({message: "Valid creds"});
-		} else {
-			res.status(404).json({error: "Invalid creds"});
-		}
+		validateCreds(username, password).then((token) => {
+			if(token) {
+				res.status(200).json({ token: token });
+			} else {
+				res.status(404).json({ error: "Invalid creds" });
+			}
+		});
 	}
 });
 
