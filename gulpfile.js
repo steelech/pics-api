@@ -7,6 +7,7 @@ gulp.task('default', ['mongo', 'api']);
 gulp.task('api', () => {
 	nodemon({
 		script: "app.js",
+		nodeArgs: ['--debug']
 	});
 });
 

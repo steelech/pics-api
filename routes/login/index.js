@@ -21,9 +21,8 @@ validateCreds = (username, password) => {
 		MongoClient.connect(url, function(err, db) {
 			if(err) {
 				console.log("error: ", err);
-				reject();
+				fullfill(null);
 			} else {
-				console.log("Connected correctly to server.");
 				findUser(db, username, password, (users) => {
 					if(users.length > 0) {
 						fullfill("token");
