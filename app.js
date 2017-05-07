@@ -1,4 +1,7 @@
-var app = require("express")();
+var express = require("express");
+var bodyParser = require("body-parser");
+var app = express();
+app.use(bodyParser.json());
 var port = process.argv[2] || 8888;
 var routes = require('./routes');
 
