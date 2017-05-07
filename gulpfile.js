@@ -2,9 +2,9 @@ var gulp = require('gulp');
 var spawn = require('child_process').spawn;
 var nodemon = require('gulp-nodemon');
 
-gulp.task('default', ['develop']);
+gulp.task('default', ['mongo', 'api']);
 
-gulp.task('develop', () => {
+gulp.task('api', () => {
 	nodemon({
 		script: "app.js",
 	});
