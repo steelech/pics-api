@@ -5,6 +5,6 @@ gulp.task('default', ['develop']);
 
 gulp.task('develop', () => {
 	nodemon({
-		script: "server.js",
+		script: "app.js",
 	});
 });
