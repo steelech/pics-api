@@ -1,6 +1,14 @@
 const login = require('express').Router();
 var MongoClient = require('mongodb').MongoClient;
 
+var findUser = (db, username, callback) => {
+	var users = db.collection('users');
+	console.log("collection: ", users);
+	users.find().toArray((err, items) => {
+		console.log("items: ", items);
+	})
+}
+
 validateCreds = (username, password) => {
 	// look up username
 	// hash password provided
@@ -14,10 +22,12 @@ validateCreds = (username, password) => {
 			console.log("error: ", err);
 		} else {
 			console.log("Connected correctly to server.");
-			db.close();
+			findUser(db, username, (users) => {
+				console.log("users: ", users);
+				return (username == "charlie" && password == "password");
+			})
 		}
 	});
-	return (username == "charlie" && password == "password");
 }
 
 // check body for username and password
