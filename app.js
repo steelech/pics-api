@@ -4,13 +4,13 @@ var app = express();
 app.use(bodyParser.json());
 var port = process.argv[2] || 8888;
 var routes = require('./routes');
-var logger = function(req, res, next) {
+var logger = (req, res, next) => {
 	console.log("REQUEST: ", req.method + " " + req.url + " " + JSON.stringify(req.headers));
 	next();
 }
 
 // enable cors for requests from frontend
-app.use(function(req, res, next) {
+app.use((req, res, next) => {
 	res.header('Access-Control-Allow-Origin', 'http://localhost:3000');
 	res.header('Access-Control-Allow-Headers', 'Content-Type');
 	next();
