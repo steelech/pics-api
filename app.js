@@ -1,7 +1,12 @@
 var express = require("express");
 var bodyParser = require("body-parser");
+const fileUpload = require('express-fileupload');
+require('dotenv').config();
+
 var app = express();
+
 app.use(bodyParser.json());
+app.use(fileUpload());
 var port = process.argv[2] || 8888;
 var routes = require('./routes');
 var logger = (req, res, next) => {
