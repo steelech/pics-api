@@ -9,9 +9,8 @@ pics.post("/", (req, res) => {
 	console.log('aws accessKeyId: ', process.env.AWS_KEYID);
 	console.log('aws secretAccessKey: ', process.env.AWS_SECRET);
 	console.log('aws region: ', process.env.AWS_REGION);
-	var keyId = process.env.AWS_KEYID;
 	var s3 = new AWS.S3({
-		accessKeyId: keyId,
+		accessKeyId: process.env.AWS_KEYID,
 		secretAccessKey: process.env.AWS_SECRET,
 		region: process.env.AWS_REGION
 	});
