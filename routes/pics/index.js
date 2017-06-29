@@ -1,7 +1,29 @@
 const pics = require('express').Router();
 var AWS = require('aws-sdk');
+var MongoClient = require('mongodb').MongoClient;
 
 module.exports = pics;
+
+const savePicToDB = (key) => {
+	var url = 'mongodb://localhost:27017/pics-api';
+	MongoClient.connect(url, (err, db) => {
+		if(err) {
+			console.log('error');
+		} else {
+			// save pic to database
+			db.collection('pictures').insertOne({
+				key
+			}, (error, result) => {
+				if(error) {
+					console.log('error: ', error);
+				}
+				else {
+					console.log('result: ', result);
+				}
+			})
+		}
+	})
+}
 
 pics.post("/", (req, res) => {
 
@@ -30,6 +52,7 @@ pics.post("/", (req, res) => {
 				console.log('error: ', err);
 			} else {
 				console.log('success');
+				savePicToDB(pic.name);
 				count++;
 				if(count === length) {
 					res.status(202).json({ message: "wadup homie" });

@@ -23,13 +23,6 @@ validateCreds = (username, password) => {
 				: findUser(db, username, password, (users) => {
 					users.length > 0 ? fullfill("token") : fullfill(null);
 				});
-			// if(err) {
-			// 	fullfill(null);
-			// } else {
-			// 	findUser(db, username, password, (users) => {
-			// 		users.length > 0 ? fullfill("token") : fullfill(null);
-			// 	});
-			// }
 		});
 	});
 }
