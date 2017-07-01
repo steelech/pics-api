@@ -23,10 +23,38 @@ const savePicsToDB = (keys) => {
 			})
 		}
 	})
-}
+};
+
+const getAllPics = () => {
+	return new Promise((resolve, reject) => {
+		var url = 'mongodb://localhost:27017/pics-api';
+		MongoClient.connect(url, (err, db) => {
+			if(err) {
+				console.log('error');
+			} else {
+				// save pic to database
+				db.collection('pictures').find({}).toArray(function(error, results) {
+					if(error) {
+						console.log('error')
+					} else {
+						resolve(results);
+					}
+				})
+			}
+		})
+	})
+};
+
+
+pics.get("/", (req, res) => {
+	console.log('about to serve up some dope ass pics yo');
+	getAllPics()
+		.then((pics) => {
+			res.status(200).json({ pics: pics });
+		});
+})
 
 pics.post("/", (req, res) => {
-
 	var s3 = new AWS.S3({
 		accessKeyId: process.env.AWS_KEYID,
 		secretAccessKey: process.env.AWS_SECRET,
