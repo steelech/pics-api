@@ -84,11 +84,20 @@ pics.post("/", (req, res) => {
 				console.log('success');
 				uploads.push(pic.name)
 				count++;
+				let urlParams = {
+					Bucket: 'erica-charlie-pics-test',
+					Key: pic.name
+				}
+				var url = s3.getSignedUrl('getObject', urlParams);
+				console.log('url: ', url);
 				if(count === length) {
 					savePicsToDB(uploads.map((name) => {
-						return { key: name }
+						return { 
+							key: name,
+							url: url 
+						}
 					}));
-					res.status(202).json({ message: "wadup homie" });
+					res.status(202).json({ message: uploads });
 				} else {
 					sendFile(count)
 				}
