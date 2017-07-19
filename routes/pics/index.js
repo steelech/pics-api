@@ -4,6 +4,59 @@ var MongoClient = require('mongodb').MongoClient;
 
 module.exports = pics;
 
+const updatePic = params => {
+	
+}
+
+const connectToDB = () => {
+	return new Promise((resolve, reject) => {
+		console.log('connecting to the database');
+		var url = 'mongodb://localhost:27017/pics-api';
+		MongoClient.connect(url, (err, db) => {
+			if(err) {
+				reject(err);
+			} else {
+				resolve(db);
+			}
+		})
+	})
+}
+
+const queryDB = (db) => {
+	return new Promise((resolve, reject) => {
+		connectToDB()
+			.then((db) => {
+				db.collection('pictures').find({}).toArray(function(error, results) {
+					if(error) {
+						console.log('error')
+					} else {
+						console.log('all pics: ', results);
+
+						// use Promise.then((results) => resolve(results))
+						results.map(pic => {
+							console.log(`here's a pic: ${JSON.stringify(pic.url)}`);
+							console.log(`new url: ${getSignedUrl(pic.key)}`)
+						})
+						resolve(results);
+					}
+				})
+			})
+	});
+}
+
+const s3 = new AWS.S3({
+	accessKeyId: process.env.AWS_KEYID,
+	secretAccessKey: process.env.AWS_SECRET,
+	region: process.env.AWS_REGION
+});
+
+const getSignedUrl = key => {
+	return s3.getSignedUrl('getObject', {
+		Bucket: 'erica-charlie-pics-test',
+		Key: key
+	})
+}
+
 const savePicsToDB = (keys) => {
 	console.log("keys: ", keys);
 	var url = 'mongodb://localhost:27017/pics-api';
@@ -26,28 +79,21 @@ const savePicsToDB = (keys) => {
 };
 
 const getAllPics = () => {
+	console.log('getting all pics right now');
 	return new Promise((resolve, reject) => {
 		var url = 'mongodb://localhost:27017/pics-api';
-		MongoClient.connect(url, (err, db) => {
-			if(err) {
-				console.log('error');
-			} else {
-				// save pic to database
-				db.collection('pictures').find({}).toArray(function(error, results) {
-					if(error) {
-						console.log('error')
-					} else {
-						resolve(results);
-					}
-				})
-			}
+		queryDB()
+			.then(results => {
+				resolve(results);
+			})
+		.catch((err) => {
+			console.log('error');
 		})
 	})
 };
 
 
 pics.get("/", (req, res) => {
-	console.log('about to serve up some dope ass pics yo');
 	getAllPics()
 		.then((pics) => {
 			res.status(200).json({ pics: pics });
@@ -76,7 +122,6 @@ pics.post("/", (req, res) => {
 			Key: pic.name,
 			Body: pic.data
 		}
-		console.log('sending: ', pic.name);
 		s3.putObject(params, (err, data) => {
 			if(err) {
 				console.log('error: ', err);
