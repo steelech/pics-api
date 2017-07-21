@@ -9,7 +9,7 @@ const updatePic = pic => {
 		connectToDB()
 			.then(db => {
 				var url = getSignedUrl(pic.key)
-				var date = new Date()
+				var expirationDate = Date.now() + 5 * 60000;
 
 				db.collection('pictures').updateOne(
 					{
@@ -18,14 +18,14 @@ const updatePic = pic => {
 					{
 						$set: {
 							"url": url,
-							"date": date
+							"expirationDate": expirationDate
 						}
 					}
 				)
 				resolve({
 					key: pic.key,
 					url: url,
-					date: date
+					expirationDate: expirationDate
 				});
 			})
 	})
@@ -82,18 +82,18 @@ const getSignedUrl = key => {
 	return s3.getSignedUrl('getObject', {
 		Bucket: 'erica-charlie-pics-test',
 		Key: key,
-		Expires: 60
+		Expires: 300
 	})
 };
 
 const savePicsToDB = (pics) => {
 	const Bucket = 'erica-charlie-pics-test';
-	const date = new Date();
+	const date = Date.now + 5 * 60000;
 	var records = pics.map(pic => {
 		return {
 			key: pic.name,
 			url: getSignedUrl(pic.name),
-			date: date
+			expirationDate: expirationDate
 		}
 	})
 	connectToDB()
