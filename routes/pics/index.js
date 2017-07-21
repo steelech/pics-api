@@ -9,6 +9,7 @@ const updatePic = pic => {
 		connectToDB()
 			.then(db => {
 				var url = getSignedUrl(pic.key)
+				var date = new Date()
 
 				db.collection('pictures').updateOne(
 					{
@@ -16,13 +17,15 @@ const updatePic = pic => {
 					},
 					{
 						$set: {
-							"url": url
+							"url": url,
+							"date": date
 						}
 					}
 				)
 				resolve({
 					key: pic.key,
-					url: url
+					url: url,
+					date: date
 				});
 			})
 	})
@@ -85,10 +88,12 @@ const getSignedUrl = key => {
 
 const savePicsToDB = (pics) => {
 	const Bucket = 'erica-charlie-pics-test';
+	const date = new Date();
 	var records = pics.map(pic => {
 		return {
 			key: pic.name,
 			url: getSignedUrl(pic.name),
+			date: date
 		}
 	})
 	connectToDB()
