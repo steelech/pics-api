@@ -6,12 +6,25 @@ module.exports = pics;
 
 const updatePic = pic => {
 	return new Promise((resolve, reject) => {
-		// get new signed url, save new expiration date
 		connectToDB()
 			.then(db => {
+				var url = getSignedUrl(pic.key)
 
+				db.collection('pictures').updateOne(
+					{
+						"key": pic.key
+					},
+					{
+						$set: {
+							"url": url
+						}
+					}
+				)
+				resolve({
+					key: pic.key,
+					url: url
+				});
 			})
-		resolve(pic);
 	})
 };
 
@@ -65,7 +78,8 @@ const s3 = new AWS.S3({
 const getSignedUrl = key => {
 	return s3.getSignedUrl('getObject', {
 		Bucket: 'erica-charlie-pics-test',
-		Key: key
+		Key: key,
+		Expires: 60
 	})
 };
 
