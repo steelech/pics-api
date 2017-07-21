@@ -6,6 +6,11 @@ module.exports = pics;
 
 const updatePic = pic => {
 	return new Promise((resolve, reject) => {
+		// get new signed url, save new expiration date
+		connectToDB()
+			.then(db => {
+
+			})
 		resolve(pic);
 	})
 };
@@ -64,15 +69,17 @@ const getSignedUrl = key => {
 	})
 };
 
-const savePicsToDB = (keys) => {
-	console.log("keys: ", keys);
-	var url = 'mongodb://localhost:27017/pics-api';
-	MongoClient.connect(url, (err, db) => {
-		if(err) {
-			console.log('error');
-		} else {
-			// save pic to database
-			db.collection('pictures').insertMany(keys,
+const savePicsToDB = (pics) => {
+	const Bucket = 'erica-charlie-pics-test';
+	var records = pics.map(pic => {
+		return {
+			key: pic.name,
+			url: getSignedUrl(pic.name),
+		}
+	})
+	connectToDB()
+		.then(db => {
+			db.collection('pictures').insertMany(records,
 			 (error, result) => {
 				if(error) {
 					console.log('error: ', error);
@@ -81,8 +88,7 @@ const savePicsToDB = (keys) => {
 					console.log('result: ', result);
 				}
 			})
-		}
-	})
+		})
 };
 
 const getAllPics = () => {
@@ -109,45 +115,29 @@ pics.post("/", (req, res) => {
 		region: process.env.AWS_REGION
 	});
 
-	var length = Object.keys(req.files).length;
-	var count = 0;
-	var fileNames = Object.keys(req.files);
-	var uploads = [];
+	var files = Object.keys(req.files).map(key => req.files[key]);
 
-	var sendFile = (count) => {
-		let pic = req.files[fileNames[count]];
-		var params = {
-			Bucket: 'erica-charlie-pics-test',
-			Key: pic.name,
-			Body: pic.data
-		}
-		s3.putObject(params, (err, data) => {
-			if(err) {
-				console.log('error: ', err);
-			} else {
-				console.log('success');
-				uploads.push(pic.name)
-				count++;
-				let urlParams = {
-					Bucket: 'erica-charlie-pics-test',
-					Key: pic.name
-				}
-				var url = s3.getSignedUrl('getObject', urlParams);
-				console.log('url: ', url);
-				if(count === length) {
-					savePicsToDB(uploads.map((name) => {
-						return { 
-							key: name,
-							url: url 
-						}
-					}));
-					res.status(202).json({ message: uploads });
-				} else {
-					sendFile(count)
-				}
+	var promises = files.map(pic => {
+		return new Promise((resolve, reject) => {
+			var params = {
+				Bucket: 'erica-charlie-pics-test',
+				Key: pic.name,
+				Body: pic.data
 			}
-		})
-	}
 
-	sendFile(count);
+			s3.putObject(params, (err, data) => {
+				if(err) {
+					console.log('error: ', err);
+				} else {
+					resolve(pic);
+				}
+			})
+		})
+	})
+
+	Promise.all(promises)
+		.then(pics => {
+			savePicsToDB(pics);
+			resolve(pics);
+		})
 });
