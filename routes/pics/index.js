@@ -4,13 +4,21 @@ var MongoClient = require('mongodb').MongoClient;
 
 module.exports = pics;
 
-const updatePic = params => {
-	
-}
+const updatePic = pic => {
+	return new Promise((resolve, reject) => {
+		resolve(pic);
+	})
+};
+
+const updatePics = pics => {
+	return new Promise((resolve, reject) => {
+		Promise.all(pics.map(updatePic))
+			.then(resolve);
+	})
+};
 
 const connectToDB = () => {
 	return new Promise((resolve, reject) => {
-		console.log('connecting to the database');
 		var url = 'mongodb://localhost:27017/pics-api';
 		MongoClient.connect(url, (err, db) => {
 			if(err) {
@@ -24,25 +32,24 @@ const connectToDB = () => {
 
 const queryDB = (db) => {
 	return new Promise((resolve, reject) => {
-		connectToDB()
-			.then((db) => {
-				db.collection('pictures').find({}).toArray(function(error, results) {
-					if(error) {
-						console.log('error')
-					} else {
-						console.log('all pics: ', results);
+		db.collection('pictures').find({}).toArray(function(error, results) {
+			if(error) {
+				console.log('error')
+			} else {
+				resolve(results);
+			}
+		})
+	})
+};
 
-						// use Promise.then((results) => resolve(results))
-						results.map(pic => {
-							console.log(`here's a pic: ${JSON.stringify(pic.url)}`);
-							console.log(`new url: ${getSignedUrl(pic.key)}`)
-						})
-						resolve(results);
-					}
-				})
-			})
+const getAllPicsFromDB = (db) => {
+	return new Promise((resolve, reject) => {
+		connectToDB()
+			.then(queryDB)
+			.then(updatePics)
+			.then(resolve);
 	});
-}
+};
 
 const s3 = new AWS.S3({
 	accessKeyId: process.env.AWS_KEYID,
@@ -55,7 +62,7 @@ const getSignedUrl = key => {
 		Bucket: 'erica-charlie-pics-test',
 		Key: key
 	})
-}
+};
 
 const savePicsToDB = (keys) => {
 	console.log("keys: ", keys);
@@ -79,16 +86,11 @@ const savePicsToDB = (keys) => {
 };
 
 const getAllPics = () => {
-	console.log('getting all pics right now');
 	return new Promise((resolve, reject) => {
 		var url = 'mongodb://localhost:27017/pics-api';
-		queryDB()
-			.then(results => {
-				resolve(results);
-			})
-		.catch((err) => {
-			console.log('error');
-		})
+		getAllPicsFromDB()
+			.then(resolve)
+			.catch(console.log)
 	})
 };
 
@@ -109,12 +111,9 @@ pics.post("/", (req, res) => {
 
 	var length = Object.keys(req.files).length;
 	var count = 0;
-
-
-	// instead of doing this, we should make it so that we wait until the previous request
-	// has returned, so we don't overwhelm the s3 server
 	var fileNames = Object.keys(req.files);
 	var uploads = [];
+
 	var sendFile = (count) => {
 		let pic = req.files[fileNames[count]];
 		var params = {
@@ -151,9 +150,4 @@ pics.post("/", (req, res) => {
 	}
 
 	sendFile(count);
-
-
-	// save pics info to aws
-
-	// send pics to database using info from response
 });
