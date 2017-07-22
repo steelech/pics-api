@@ -88,7 +88,7 @@ const getSignedUrl = key => {
 
 const savePicsToDB = (pics) => {
 	const Bucket = 'erica-charlie-pics-test';
-	const date = Date.now + 5 * 60000;
+	const expirationDate = Date.now() + 5 * 60000;
 	var records = pics.map(pic => {
 		return {
 			key: pic.name,
@@ -157,6 +157,6 @@ pics.post("/", (req, res) => {
 	Promise.all(promises)
 		.then(pics => {
 			savePicsToDB(pics);
-			resolve(pics);
+			res.status(200).json({ pics: pics });
 		})
 });
