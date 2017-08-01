@@ -1,3 +1,3 @@
-#pics api
+# pics api
 
-API for pics client side web app, using Node.js
+API for pics client side web app, using Node.js/Express
