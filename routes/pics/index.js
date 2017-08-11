@@ -1,4 +1,5 @@
 const pics = require('express').Router();
+const im = require('imagemagick');
 var AWS = require('aws-sdk');
 var MongoClient = require('mongodb').MongoClient;
 
@@ -75,14 +76,14 @@ const s3 = new AWS.S3({
 
 const getSignedUrl = key => {
   return s3.getSignedUrl('getObject', {
-    Bucket: 'erica-charlie-pics-test',
+    Bucket: 'erica-charlie-pics-stage',
     Key: key,
     Expires: 300
   });
 };
 
 const savePicsToDB = pics => {
-  const Bucket = 'erica-charlie-pics-test';
+  const Bucket = 'erica-charlie-pics-stage';
   const expirationDate = Date.now() + 5 * 60000;
   var records = pics.map(pic => {
     return {
@@ -127,7 +128,7 @@ pics.post('/', (req, res) => {
   var promises = files.map(pic => {
     return new Promise((resolve, reject) => {
       var params = {
-        Bucket: 'erica-charlie-pics-test',
+        Bucket: 'erica-charlie-pics-stage',
         Key: pic.name,
         Body: pic.data
       };
