@@ -8,9 +8,9 @@ module.exports = pics;
 const updatePic = pic => {
   return new Promise((resolve, reject) => {
     connectToDB().then(db => {
-      var url = getSignedUrl(pic.key);
-      var thmbUrl = getSignedUrl(`thumbnail-${pic.key}`);
-      var ssUrl = getSignedUrl(`slideshow-${pic.key}`)
+      var url = getSignedUrl(pic.key, 'erica-charlie-pics-stage');
+      var thmbUrl = getSignedUrl(`thumbnail-${pic.key}`, 'erica-charlie-pics-thumbnails');
+      var ssUrl = getSignedUrl(`slideshow-${pic.key}`, 'erica-charlie-pics-slideshow');
       var expirationDate = Date.now() + 5 * 60000;
 
       db.collection('pictures').updateOne(
@@ -80,11 +80,11 @@ const s3 = new AWS.S3({
   region: process.env.AWS_REGION
 });
 
-const getSignedUrl = key => {
+const getSignedUrl = (Key, Bucket) => {
   return s3.getSignedUrl('getObject', {
-    Bucket: 'erica-charlie-pics-stage',
-    Key: key,
-    Expires: 300
+    Bucket,
+    Key,
+    Expires: 300,
   });
 };
 
@@ -95,11 +95,11 @@ const savePicsToDB = pics => {
   var records = pics.map(pic => {
     return {
       key: pic.name,
-      url: getSignedUrl(pic.name),
+      url: getSignedUrl(pic.name, 'erica-charlie-pics-stage'),
       thmbKey: `thumbnail-${pic.name}`,
-      thmbUrl: getSignedUrl(`thumbnail-${pic.name}`),
+      thmbUrl: getSignedUrl(`thumbnail-${pic.name}`, 'erica-charlie-pics-thumbnails'),
       ssKey: `slideshow-${pic.name}`,
-      ssUrl: getSignedUrl(`slideshow-${pic.name}`),
+      ssUrl: getSignedUrl(`slideshow-${pic.name}`, 'erica-charlie-pics-slideshow'),
       expirationDate: expirationDate,
 
     };
