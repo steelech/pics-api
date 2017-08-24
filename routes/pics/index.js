@@ -9,6 +9,8 @@ const updatePic = pic => {
   return new Promise((resolve, reject) => {
     connectToDB().then(db => {
       var url = getSignedUrl(pic.key);
+      var thmbUrl = getSignedUrl(`thumbnail-${pic.key}`);
+      var ssUrl = getSignedUrl(`slideshow-${pic.key}`)
       var expirationDate = Date.now() + 5 * 60000;
 
       db.collection('pictures').updateOne(
@@ -17,15 +19,19 @@ const updatePic = pic => {
         },
         {
           $set: {
-            url: url,
-            expirationDate: expirationDate
+            url,
+            thmbUrl,
+            ssUrl,
+            expirationDate
           }
         }
       );
       resolve({
         key: pic.key,
-        url: url,
-        expirationDate: expirationDate
+        url,
+        thmbUrl,
+        ssUrl,
+        expirationDate
       });
     });
   });
@@ -85,11 +91,17 @@ const getSignedUrl = key => {
 const savePicsToDB = pics => {
   const Bucket = 'erica-charlie-pics-stage';
   const expirationDate = Date.now() + 5 * 60000;
+  // need to save thumbnail/slideshow key, url, expirationDate as well
   var records = pics.map(pic => {
     return {
       key: pic.name,
       url: getSignedUrl(pic.name),
-      expirationDate: expirationDate
+      thmbKey: `thumbnail-${pic.name}`,
+      thmbUrl: getSignedUrl(`thumbnail-${pic.name}`),
+      ssKey: `slideshow-${pic.name}`,
+      ssUrl: getSignedUrl(`slideshow-${pic.name}`),
+      expirationDate: expirationDate,
+
     };
   });
   connectToDB().then(db => {
