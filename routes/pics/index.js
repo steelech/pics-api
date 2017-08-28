@@ -9,8 +9,14 @@ const updatePic = pic => {
   return new Promise((resolve, reject) => {
     connectToDB().then(db => {
       var url = getSignedUrl(pic.key, 'erica-charlie-pics-stage');
-      var thmbUrl = getSignedUrl(`thumbnail-${pic.key}`, 'erica-charlie-pics-thumbnails');
-      var ssUrl = getSignedUrl(`slideshow-${pic.key}`, 'erica-charlie-pics-slideshow');
+      var thmbUrl = getSignedUrl(
+        `thumbnail-${pic.key}`,
+        'erica-charlie-pics-thumbnails'
+      );
+      var ssUrl = getSignedUrl(
+        `slideshow-${pic.key}`,
+        'erica-charlie-pics-slideshow'
+      );
       var expirationDate = Date.now() + 5 * 60000;
 
       db.collection('pictures').updateOne(
@@ -84,7 +90,7 @@ const getSignedUrl = (Key, Bucket) => {
   return s3.getSignedUrl('getObject', {
     Bucket,
     Key,
-    Expires: 300,
+    Expires: 300
   });
 };
 
@@ -97,11 +103,16 @@ const savePicsToDB = pics => {
       key: pic.name,
       url: getSignedUrl(pic.name, 'erica-charlie-pics-stage'),
       thmbKey: `thumbnail-${pic.name}`,
-      thmbUrl: getSignedUrl(`thumbnail-${pic.name}`, 'erica-charlie-pics-thumbnails'),
+      thmbUrl: getSignedUrl(
+        `thumbnail-${pic.name}`,
+        'erica-charlie-pics-thumbnails'
+      ),
       ssKey: `slideshow-${pic.name}`,
-      ssUrl: getSignedUrl(`slideshow-${pic.name}`, 'erica-charlie-pics-slideshow'),
-      expirationDate: expirationDate,
-
+      ssUrl: getSignedUrl(
+        `slideshow-${pic.name}`,
+        'erica-charlie-pics-slideshow'
+      ),
+      expirationDate: expirationDate
     };
   });
   connectToDB().then(db => {
