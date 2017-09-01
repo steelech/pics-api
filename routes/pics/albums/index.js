@@ -17,32 +17,56 @@ const connectToDB = () => {
   });
 };
 
+const getNextSequenceValue = db => {
+  return new Promise((resolve, reject) => {
+    const high = db
+      .collection('albums')
+      .find({})
+      .sort({ _id: -1 })
+      .limit(1)
+      .toArray(function(err, results) {
+        if (results.length) {
+          console.log(`high: ${results[0]._id}`);
+          resolve(results[0]._id + 1);
+        } else {
+          console.log('no albums, high: 1');
+          resolve(1);
+        }
+      });
+  });
+};
+
 const getAllAlbums = () => {
   return new Promise((resolve, reject) => {
     connectToDB().then(db => {
+      getNextSequenceValue(db);
       db.collection('albums').find({}).toArray(function(err, results) {
         if (err) {
           console.log('error');
         } else {
           resolve(results);
         }
-      })
-    })
-  })
-}
+      });
+    });
+  });
+};
 
 const saveNewAlbum = name => {
-  const record = {
-    name
-  };
   return new Promise((resolve, reject) => {
     connectToDB().then(db => {
-      db.collection('albums').insert(record, (error, results) => {
-        if (error) {
-          reject();
-        } else {
-          resolve(results);
-        }
+      getNextSequenceValue(db).then(seqNo => {
+        console.log('ID: ', seqNo);
+        const record = {
+          name,
+          _id: seqNo
+        };
+        db.collection('albums').insert(record, (error, results) => {
+          if (error) {
+            reject();
+          } else {
+            resolve(results);
+          }
+        });
       });
     });
   });
@@ -59,5 +83,5 @@ albums.post('/', (req, res) => {
 albums.get('/', (req, res) => {
   getAllAlbums().then(results => {
     res.status(200).json(results);
-  })
+  });
 });
