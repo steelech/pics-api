@@ -17,6 +17,20 @@ const connectToDB = () => {
   });
 };
 
+const getAllAlbums = () => {
+  return new Promise((resolve, reject) => {
+    connectToDB().then(db => {
+      db.collection('albums').find({}).toArray(function(err, results) {
+        if (err) {
+          console.log('error');
+        } else {
+          resolve(results);
+        }
+      })
+    })
+  })
+}
+
 const saveNewAlbum = name => {
   const record = {
     name
@@ -35,15 +49,15 @@ const saveNewAlbum = name => {
 };
 
 albums.post('/', (req, res) => {
-  console.log(`REQUEST: ${util.inspect(req.body.name)}`);
   const albumName = req.body.name;
-  // save album to database
   saveNewAlbum(albumName).then(results => {
     console.log('album saved!');
+    res.status(200).json({ message: 'album created' });
   });
-  res.status(200).json({ message: 'ALBUMS POST' });
 });
 
 albums.get('/', (req, res) => {
-  res.status(200).json({ message: 'ALBUMS GET' });
+  getAllAlbums().then(results => {
+    res.status(200).json(results);
+  })
 });

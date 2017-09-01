@@ -94,7 +94,7 @@ const getSignedUrl = (Key, Bucket) => {
   });
 };
 
-const savePicsToDB = pics => {
+const savePicsToDB = (pics, albumName) => {
   const Bucket = 'erica-charlie-pics-stage';
   const expirationDate = Date.now() + 5 * 60000;
   // need to save thumbnail/slideshow key, url, expirationDate as well
@@ -112,7 +112,8 @@ const savePicsToDB = pics => {
         `slideshow-${pic.name}`,
         'erica-charlie-pics-slideshow'
       ),
-      expirationDate: expirationDate
+      expirationDate: expirationDate,
+      album: albumName
     };
   });
   connectToDB().then(db => {
@@ -167,7 +168,8 @@ pics.post('/', (req, res) => {
   });
 
   Promise.all(promises).then(pics => {
-    savePicsToDB(pics);
+    const albumName = req.body.selectedAlbum;
+    savePicsToDB(pics, albumName);
     res.status(200).json({ pics: pics });
   });
 });
