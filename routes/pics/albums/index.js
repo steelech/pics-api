@@ -26,10 +26,8 @@ const getNextSequenceValue = db => {
       .limit(1)
       .toArray(function(err, results) {
         if (results.length) {
-          console.log(`high: ${results[0]._id}`);
           resolve(results[0]._id + 1);
         } else {
-          console.log('no albums, high: 1');
           resolve(1);
         }
       });
@@ -45,6 +43,20 @@ const getAllAlbums = () => {
           console.log('error');
         } else {
           resolve(results);
+        }
+      });
+    });
+  });
+};
+
+const getOneAlbum = _id => {
+  return new Promise((resolve, reject) => {
+    connectToDB().then(db => {
+      db.collection('albums').find({ "_id": parseInt(_id) }).toArray(function(err, record) {
+        if (err) {
+          console.log('error');
+        } else {
+          resolve(record);
         }
       });
     });
@@ -75,13 +87,18 @@ const saveNewAlbum = name => {
 albums.post('/', (req, res) => {
   const albumName = req.body.name;
   saveNewAlbum(albumName).then(results => {
-    console.log('album saved!');
     res.status(200).json({ message: 'album created' });
   });
 });
 
 albums.get('/', (req, res) => {
-  getAllAlbums().then(results => {
-    res.status(200).json(results);
-  });
+  if (req.query.id) {
+    getOneAlbum(req.query.id).then(album => {
+      res.status(200).json(album);
+    });
+  } else {
+    getAllAlbums().then(results => {
+      res.status(200).json(results);
+    });
+  }
 });
