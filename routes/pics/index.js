@@ -135,7 +135,7 @@ const getAllPics = () => {
 };
 
 const getPicsByAlbum = albumid => {
-  return new Promise((resolve, reject) => {
+  const getAlbumFromDB = new Promise((resolve, reject) => {
     connectToDB().then(db => {
       // get album name using albumid
       // get pics using albumName
@@ -146,6 +146,9 @@ const getPicsByAlbum = albumid => {
           resolve(results);
         });
     });
+  });
+  return new Promise((resolve, reject) => {
+    getAlbumFromDB().then(updatePics).then(resolve);
   });
 };
 
