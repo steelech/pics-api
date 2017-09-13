@@ -94,7 +94,7 @@ const getSignedUrl = (Key, Bucket) => {
   });
 };
 
-const savePicsToDB = (pics, albumName) => {
+const savePicsToDB = (pics, albumid) => {
   const Bucket = 'erica-charlie-pics-stage';
   const expirationDate = Date.now() + 5 * 60000;
   // need to save thumbnail/slideshow key, url, expirationDate as well
@@ -113,7 +113,7 @@ const savePicsToDB = (pics, albumName) => {
         'erica-charlie-pics-slideshow'
       ),
       expirationDate: expirationDate,
-      album: albumName
+      albumid: parseInt(albumid)
     };
   });
   connectToDB().then(db => {
@@ -130,13 +130,35 @@ const savePicsToDB = (pics, albumName) => {
 const getAllPics = () => {
   return new Promise((resolve, reject) => {
     var url = 'mongodb://localhost:27017/pics-api';
-    getAllPicsFromDB().then(resolve).catch(console.log);
+    getAllPicsFromDB().then(resolve).catch();
   });
 };
 
+const getPicsByAlbum = albumid => {
+  return new Promise((resolve, reject) => {
+    connectToDB().then(db => {
+      // get album name using albumid
+      // get pics using albumName
+      db
+        .collection('albums')
+        .find({ _id: albumid })
+        .toArray(function(err, results) {
+          resolve(results);
+        });
+    });
+  });
+};
+
+pics.get('/:albumid', (req, res) => {
+  `albumid: ${req.params.albumid}`;
+  getPicsByAlbum(req.params.albumid).then(pics => {
+    res.status(200).json(pics);
+  });
+});
+
 pics.get('/', (req, res) => {
   getAllPics().then(pics => {
-    res.status(200).json({ pics: pics });
+    res.status(200).json(pics);
   });
 });
 
@@ -168,8 +190,8 @@ pics.post('/', (req, res) => {
   });
 
   Promise.all(promises).then(pics => {
-    const albumName = req.body.selectedAlbum;
-    savePicsToDB(pics, albumName);
-    res.status(200).json({ pics: pics });
+    const albumid = req.body._id;
+    savePicsToDB(pics, albumid);
+    res.status(200).json(pics);
   });
 });

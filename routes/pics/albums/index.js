@@ -16,6 +16,20 @@ const connectToDB = () => {
     });
   });
 };
+const getPicsByAlbum = albumid => {
+  return new Promise((resolve, reject) => {
+    connectToDB().then(db => {
+      // get album name using albumid
+      // get pics using albumName
+      db
+        .collection('pictures')
+        .find({ albumid: parseInt(albumid) })
+        .toArray(function(err, results) {
+          resolve(results);
+        });
+    });
+  });
+};
 
 const getNextSequenceValue = db => {
   return new Promise((resolve, reject) => {
@@ -52,13 +66,16 @@ const getAllAlbums = () => {
 const getOneAlbum = _id => {
   return new Promise((resolve, reject) => {
     connectToDB().then(db => {
-      db.collection('albums').find({ "_id": parseInt(_id) }).toArray(function(err, record) {
-        if (err) {
-          console.log('error');
-        } else {
-          resolve(record);
-        }
-      });
+      db
+        .collection('albums')
+        .find({ _id: parseInt(_id) })
+        .toArray(function(err, record) {
+          if (err) {
+            console.log('error');
+          } else {
+            resolve(record);
+          }
+        });
     });
   });
 };
@@ -88,6 +105,14 @@ albums.post('/', (req, res) => {
   const albumName = req.body.name;
   saveNewAlbum(albumName).then(results => {
     res.status(200).json({ message: 'album created' });
+  });
+});
+
+albums.get('/:albumid', (req, res) => {
+  console.log(`YOooooooooooOOOOOOOOOOOOOOOOOOO: ${req.params.albumid}`);
+  getPicsByAlbum(req.params.albumid).then(pics => {
+    console.log('PICS:::::::: ', pics);
+    res.status(200).json(pics);
   });
 });
 
