@@ -33,6 +33,7 @@ const updatePic = pic => {
         }
       );
       resolve({
+        id: pic._id,
         key: pic.key,
         url,
         thmbUrl,
