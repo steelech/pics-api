@@ -2,6 +2,7 @@ const pics = require('express').Router();
 const im = require('imagemagick');
 var AWS = require('aws-sdk');
 var MongoClient = require('mongodb').MongoClient;
+var ObjectId = require('mongodb').ObjectID;
 
 module.exports = pics;
 
@@ -153,6 +154,18 @@ const getPicsByAlbum = albumid => {
   });
 };
 
+const deletePic = id => {
+  return new Promise((resolve, reject) => {
+    connectToDB()
+      .then(db => {
+        resolve(db
+          .collection('pictures')
+          .remove({ "_id": new ObjectId(id) }, { justOne: true })
+        );
+      });
+  });
+};
+
 pics.get('/:albumid', (req, res) => {
   `albumid: ${req.params.albumid}`;
   getPicsByAlbum(req.params.albumid).then(pics => {
@@ -198,4 +211,14 @@ pics.post('/', (req, res) => {
     savePicsToDB(pics, albumid);
     res.status(200).json(pics);
   });
+});
+
+pics.delete('/:picid', (req, res) => {
+  deletePic(req.params.picid)
+    .then(result => {
+      res.status(200).json(result);
+    })
+    .catch(err => {
+      res.status(400).json(err);
+    })
 });
