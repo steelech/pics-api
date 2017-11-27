@@ -3,19 +3,20 @@ const im = require('imagemagick');
 var AWS = require('aws-sdk');
 var MongoClient = require('mongodb').MongoClient;
 var ObjectId = require('mongodb').ObjectID;
+const uuid4 = require('uuid/v4');
 
 module.exports = pics;
 
 const updatePic = pic => {
   return new Promise((resolve, reject) => {
     connectToDB().then(db => {
-      var url = getSignedUrl(pic.key, 'erica-charlie-pics-stage');
+      var url = getSignedUrl(pic._id, 'erica-charlie-pics-stage');
       var thmbUrl = getSignedUrl(
-        `thumbnail-${pic.key}`,
+        `thumbnail-${pic._id}`,
         'erica-charlie-pics-thumbnails'
       );
       var ssUrl = getSignedUrl(
-        `slideshow-${pic.key}`,
+        `slideshow-${pic._id}`,
         'erica-charlie-pics-slideshow'
       );
       var expirationDate = Date.now() + 5 * 60000;
@@ -102,16 +103,17 @@ const savePicsToDB = (pics, albumid) => {
   // need to save thumbnail/slideshow key, url, expirationDate as well
   var records = pics.map(pic => {
     return {
+      _id: pic._id,
       key: pic.name,
-      url: getSignedUrl(pic.name, 'erica-charlie-pics-stage'),
-      thmbKey: `thumbnail-${pic.name}`,
+      url: getSignedUrl(pic._id, 'erica-charlie-pics-stage'),
+      thmbKey: `thumbnail-${pic._id}`,
       thmbUrl: getSignedUrl(
-        `thumbnail-${pic.name}`,
+        `thumbnail-${pic._id}`,
         'erica-charlie-pics-thumbnails'
       ),
-      ssKey: `slideshow-${pic.name}`,
+      ssKey: `slideshow-${pic._id}`,
       ssUrl: getSignedUrl(
-        `slideshow-${pic.name}`,
+        `slideshow-${pic._id}`,
         'erica-charlie-pics-slideshow'
       ),
       expirationDate: expirationDate,
@@ -154,20 +156,76 @@ const getPicsByAlbum = albumid => {
   });
 };
 
+const deleteThumbnail = id => {
+  return new Promise((resolve, reject) => {
+    const params = {
+      Bucket: 'erica-charlie-pics-thumbnails',
+      Key: `thumbnail-${id}`,
+    }
+    s3.deleteObject(params, (err, data) => {
+      if (err) {
+        console.log('error: ', err);
+      } else {
+        resolve(data);
+      }
+    });
+  });
+};
+
+const deleteSlideshowPic = id => {
+  return new Promise((resolve, reject) => {
+    const params = {
+      Bucket: 'erica-charlie-pics-slideshow',
+      Key: `slideshow-${id}`,
+    }
+    s3.deleteObject(params, (err, data) => {
+      if (err) {
+        console.log('error: ', err);
+      } else {
+        resolve(data);
+      }
+    });
+  });
+};
+
+const deleteFullSizedPic = id => {
+  return new Promise((resolve, reject) => {
+    const params = {
+      Bucket: 'erica-charlie-pics-stage',
+      Key: id,
+    }
+    s3.deleteObject(params, (err, data) => {
+      if (err) {
+        console.log('error: ', err);
+      } else {
+        resolve(data);
+      }
+    });
+  });
+};
+
+const deletePicFromS3 = id => {
+  return new Promise((resolve, reject) => {
+    Promise.all([deleteFullSizedPic(id), deleteThumbnail(id), deleteSlideshowPic(id)])
+      .then(resolve)
+  });
+};
+
 const deletePic = id => {
   return new Promise((resolve, reject) => {
     connectToDB()
       .then(db => {
-        resolve(db
+        db
           .collection('pictures')
-          .remove({ "_id": new ObjectId(id) }, { justOne: true })
-        );
+          .remove({ "_id": id }, { justOne: true })
+        deletePicFromS3(id)
+          .then(resolve);
+
       });
   });
 };
 
 pics.get('/:albumid', (req, res) => {
-  `albumid: ${req.params.albumid}`;
   getPicsByAlbum(req.params.albumid).then(pics => {
     res.status(200).json(pics);
   });
@@ -190,9 +248,10 @@ pics.post('/', (req, res) => {
 
   var promises = files.map(pic => {
     return new Promise((resolve, reject) => {
+      const _id = uuid4();
       var params = {
         Bucket: 'erica-charlie-pics-stage',
-        Key: pic.name,
+        Key: _id,
         Body: pic.data
       };
 
@@ -200,7 +259,7 @@ pics.post('/', (req, res) => {
         if (err) {
           console.log('error: ', err);
         } else {
-          resolve(pic);
+          resolve({ name: pic.name, _id });
         }
       });
     });
