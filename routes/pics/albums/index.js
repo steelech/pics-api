@@ -1,8 +1,72 @@
 const albums = require('express').Router();
 const util = require('util');
 var MongoClient = require('mongodb').MongoClient;
+var AWS = require('aws-sdk');
 
 module.exports = albums;
+
+const s3 = new AWS.S3({
+  accessKeyId: process.env.AWS_KEYID,
+  secretAccessKey: process.env.AWS_SECRET,
+  region: process.env.AWS_REGION
+});
+
+const getSignedUrl = (Key, Bucket) => {
+  return s3.getSignedUrl('getObject', {
+    Bucket,
+    Key,
+    Expires: 300
+  });
+};
+
+
+const updatePic = (pic) => {
+  return new Promise((resolve, reject) => {
+    console.log('updating pic: ', pic);
+    var url = getSignedUrl(pic._id, 'erica-charlie-pics-stage');
+    connectToDB().then(db => {
+      var url = getSignedUrl(pic._id, 'erica-charlie-pics-stage');
+      var thmbUrl = getSignedUrl(
+        `thumbnail-${pic._id}`,
+        'erica-charlie-pics-thumbnails'
+      );
+      var ssUrl = getSignedUrl(
+        `slideshow-${pic._id}`,
+        'erica-charlie-pics-slideshow'
+      );
+      var expirationDate = Date.now() + 5 * 60000;
+
+      db.collection('pictures').updateOne(
+        {
+          key: pic.key
+        },
+        {
+          $set: {
+            url,
+            thmbUrl,
+            ssUrl,
+            expirationDate
+          }
+        }
+      );
+      resolve({
+        _id: pic._id,
+        key: pic.key,
+        url,
+        thmbUrl,
+        ssUrl,
+        expirationDate
+      });
+    });
+    // resolve(pic);
+  });
+};
+
+const updatePics = (pics) => {
+  return new Promise((resolve, reject) => {
+    Promise.all(pics.map(updatePic)).then(resolve);
+  });
+};
 
 const connectToDB = () => {
   return new Promise((resolve, reject) => {
@@ -17,7 +81,7 @@ const connectToDB = () => {
   });
 };
 const getPicsByAlbum = albumid => {
-  return new Promise((resolve, reject) => {
+  const getPics = () => new Promise((resolve, reject) => {
     connectToDB().then(db => {
       // get album name using albumid
       // get pics using albumName
@@ -29,6 +93,9 @@ const getPicsByAlbum = albumid => {
         });
     });
   });
+  return new Promise((resolve, reject) => {
+    getPics().then(updatePics).then(resolve);
+  })
 };
 
 const getNextSequenceValue = db => {
@@ -109,9 +176,7 @@ albums.post('/', (req, res) => {
 });
 
 albums.get('/:albumid', (req, res) => {
-  console.log(`YOooooooooooOOOOOOOOOOOOOOOOOOO: ${req.params.albumid}`);
   getPicsByAlbum(req.params.albumid).then(pics => {
-    console.log('PICS:::::::: ', pics);
     res.status(200).json(pics);
   });
 });
