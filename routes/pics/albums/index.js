@@ -58,7 +58,6 @@ const updatePic = (pic) => {
         expirationDate
       });
     });
-    // resolve(pic);
   });
 };
 
