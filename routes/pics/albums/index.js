@@ -96,6 +96,86 @@ const getPicsByAlbum = albumid => {
     getPics().then(updatePics).then(resolve);
   })
 };
+const deleteThumbnail = id => {
+  return new Promise((resolve, reject) => {
+    const params = {
+      Bucket: 'erica-charlie-pics-thumbnails',
+      Key: `thumbnail-${id}`,
+    }
+    s3.deleteObject(params, (err, data) => {
+      if (err) {
+        console.log('error: ', err);
+      } else {
+        resolve(data);
+      }
+    });
+  });
+};
+
+const deleteSlideshowPic = id => {
+  return new Promise((resolve, reject) => {
+    const params = {
+      Bucket: 'erica-charlie-pics-slideshow',
+      Key: `slideshow-${id}`,
+    }
+    s3.deleteObject(params, (err, data) => {
+      if (err) {
+        console.log('error: ', err);
+      } else {
+        resolve(data);
+      }
+    });
+  });
+};
+
+const deleteFullSizedPic = id => {
+  return new Promise((resolve, reject) => {
+    const params = {
+      Bucket: 'erica-charlie-pics-stage',
+      Key: id,
+    }
+    s3.deleteObject(params, (err, data) => {
+      if (err) {
+        console.log('error: ', err);
+      } else {
+        resolve(data);
+      }
+    });
+  });
+};
+
+const deletePicFromS3 = id => {
+  return new Promise((resolve, reject) => {
+    Promise.all([deleteFullSizedPic(id), deleteThumbnail(id), deleteSlideshowPic(id)])
+      .then(resolve)
+  });
+};
+
+const deletePic = id => {
+  return new Promise((resolve, reject) => {
+    connectToDB()
+      .then(db => {
+        db
+          .collection('pictures')
+          .remove({ "_id": id }, { justOne: true })
+        deletePicFromS3(id)
+          .then(resolve);
+
+      });
+  });
+};
+
+const deleteAlbum = albumId => {
+  return new Promise((resolve, reject) => {
+    connectToDB()
+      .then(db => {
+        db
+          .collection('albums')
+          .remove({ "_id": parseInt(albumId) })
+        resolve();
+      })
+  });
+};
 
 const getNextSequenceValue = db => {
   return new Promise((resolve, reject) => {
@@ -167,6 +247,41 @@ const saveNewAlbum = name => {
   });
 };
 
+const deleteAlbumPics = albumId => {
+  return new Promise((resolve, reject) => {
+    connectToDB()
+      .then(db => {
+        db.collection('pictures')
+          .find({ "albumid": parseInt(albumId) })
+          .toArray(function(err, results) {
+            const promises = results.map((pic) => deletePic(pic._id));
+            Promise.all(promises)
+              .then(() => {
+                resolve(results);
+              })
+          })
+      })
+  });
+};
+
+const updateAlbumPics = albumId => {
+  return new Promise((resolve, reject) => {
+    connectToDB()
+      .then(db => {
+        db.collection('pictures')
+          .updateMany(
+            {
+              "albumid": parseInt(albumId)
+            },
+            {
+              $set: { "albumid": null }
+            }
+          )
+        resolve();
+      });
+  });
+}
+
 albums.post('/', (req, res) => {
   const albumName = req.body.name;
   saveNewAlbum(albumName).then(results => {
@@ -190,4 +305,29 @@ albums.get('/', (req, res) => {
       res.status(200).json(results);
     });
   }
+});
+
+albums.delete('/', (req, res) => {
+  const albumId = req.query.id;
+  const deletePics = req.query.deletePics;
+
+  deleteAlbum(albumId)
+    .then(() => {
+      if (deletePics) {
+        deleteAlbumPics(albumId)
+          .then(pics => {
+            res.status(200).json({
+              message: `Successfully deleted album: ${albumId}`,
+              deletedPics: pics
+            })
+          })
+      } else {
+        updateAlbumPics(albumId)
+          .then(() => {
+            res.status(200).json({
+              message: `Successfully deleted album: ${albumId}, no pics deleted`
+            })
+          })
+      }
+    });
 });

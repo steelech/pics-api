@@ -254,7 +254,6 @@ pics.post('/', (req, res) => {
         Key: _id,
         Body: pic.data
       };
-
       s3.putObject(params, (err, data) => {
         if (err) {
           console.log('error: ', err);
@@ -267,6 +266,7 @@ pics.post('/', (req, res) => {
 
   Promise.all(promises).then(pics => {
     const albumid = req.body._id;
+    console.log('done with s3 upload');
     savePicsToDB(pics, albumid);
     res.status(200).json(pics);
   });
