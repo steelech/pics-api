@@ -239,7 +239,7 @@ const saveNewAlbum = name => {
           if (error) {
             reject();
           } else {
-            resolve(results);
+            resolve({ albumId: seqNo });
           }
         });
       });
@@ -285,7 +285,7 @@ const updateAlbumPics = albumId => {
 albums.post('/', (req, res) => {
   const albumName = req.body.name;
   saveNewAlbum(albumName).then(results => {
-    res.status(200).json({ message: 'album created' });
+    res.status(200).json(results);
   });
 });
 
